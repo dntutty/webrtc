@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/et_room_id"
+        android:layout_width="match_parent"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="100dp"
+        android:layout_height="wrap_content"
+        android:hint="房间号"
+        android:padding="12dp" />
+
+    <TextView
+        android:id="@+id/tv_join_room"
+        android:layout_width="match_parent"
+        android:layout_marginTop="12dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:background="@color/colorAccent"
+        android:gravity="center"
+        android:padding="12dp"
+        android:text="加入房间"
+        android:textColor="@color/white" />
+
+    <TextView
+        android:id="@+id/tv_p_2_p"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="12dp"
+        android:background="@color/colorAccent"
+        android:gravity="center"
+        android:padding="12dp"
+        android:text="一对一聊天"
+        android:textColor="@color/white" />
+
+
+</LinearLayout>

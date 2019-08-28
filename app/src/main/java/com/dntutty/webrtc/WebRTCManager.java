@@ -3,6 +3,8 @@ package com.dntutty.webrtc;
 import com.dntutty.webrtc.connection.PeerConnectionManager;
 import com.dntutty.webrtc.socket.JavaWebSocket;
 
+import org.webrtc.EglBase;
+
 public class WebRTCManager {
     private JavaWebSocket webSocket;
     private PeerConnectionManager peerConnectionManager;
@@ -20,7 +22,8 @@ public class WebRTCManager {
         webSocket.connect("wss://47.98.186.185/wss");
     }
 
-    public void joinRoom(ChatRoomActivity chatRoomActivity) {
+    public void joinRoom(ChatRoomActivity chatRoomActivity, EglBase eglBase) {
+        peerConnectionManager.initContext(chatRoomActivity,eglBase);
         webSocket.joinRoom(roomId);
     }
 }

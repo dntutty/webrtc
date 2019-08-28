@@ -3,19 +3,25 @@ package com.dntutty.webrtc.socket;
 import android.content.Context;
 import android.util.Log;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.dntutty.webrtc.ChatRoomActivity;
 import com.dntutty.webrtc.MainActivity;
+import com.dntutty.webrtc.connection.PeerConnectionManager;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+import org.webrtc.EglBase;
 
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +31,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 public class JavaWebSocket {
+    private PeerConnectionManager peerConnectionManager;
     private static final String TAG = "JavaWebSocket";
     private WebSocketClient socketClient;
     private MainActivity activity;
@@ -34,6 +41,7 @@ public class JavaWebSocket {
     }
 
     public void connect(String wss) {
+        peerConnectionManager = PeerConnectionManager.getInstance();
         URI uri = null;
         try {
             uri = new URI(wss);
@@ -50,6 +58,7 @@ public class JavaWebSocket {
             @Override
             public void onMessage(String message) {
                 Log.i(TAG, "onMessage: " + message);
+                handleMessage(message);
             }
 
             @Override
@@ -77,6 +86,27 @@ public class JavaWebSocket {
                 e.printStackTrace();
             }
             socketClient.connect();
+        }
+    }
+
+    private void handleMessage(String message) {
+        Map map = JSON.parseObject(message, Map.class);
+        String eventName = (String) map.get("eventName");
+        //p2p通信
+        if (eventName.equals("_peers")) {
+            handleJoinRoom(map);
+        }
+    }
+
+    private void handleJoinRoom(Map map) {
+        Map data = (Map)map.get("data");
+        JSONArray array;
+        if (data != null) {
+            array = (JSONArray) data.get("connections");
+            String js = JSONObject.toJSONString(array, SerializerFeature.WriteClassName);
+            ArrayList<String> connections = (ArrayList<String>) JSONObject.parseArray(js,String.class);
+            String mineId = (String) data.get("you");
+            peerConnectionManager.joinToRoom(this,true,connections,mineId);
         }
     }
 //

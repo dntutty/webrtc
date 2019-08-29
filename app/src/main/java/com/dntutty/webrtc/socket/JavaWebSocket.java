@@ -15,6 +15,8 @@ import org.java_websocket.WebSocket;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.webrtc.EglBase;
+import org.webrtc.IceCandidate;
+import org.webrtc.SessionDescription;
 
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
@@ -23,6 +25,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
@@ -96,17 +99,52 @@ public class JavaWebSocket {
         if (eventName.equals("_peers")) {
             handleJoinRoom(map);
         }
+
+//        offer 对方响应  _ice_candidate   对方的n个小目标 ----->大目标
+        if (eventName.equals("_ice_candidate")) {
+            handleRemoteCandidate(map);
+        }
+//          对方的SDP
+        if (eventName.equals("_answer")) {
+            handleAnswer(map);
+        }
+    }
+
+    private void handleAnswer(Map map) {
+        Map data = (Map) map.get("data");
+        Map sdpDic;
+        if (null != data) {
+            sdpDic = (Map) data.get("sdp");
+            String socketId = (String) data.get("socketId");
+            String sdp = (String) sdpDic.get("sdp");
+            peerConnectionManager.onReceiveAnswer(socketId,sdp);
+        }
+    }
+
+    private void handleRemoteCandidate(Map map) {
+        Map data = (Map) map.get("data");
+        String socketId;
+        if (data != null) {
+            socketId = (String) data.get("socketId");
+            String sdpMid = (String) data.get("id");
+            sdpMid = (null == sdpMid) ? "video" : sdpMid;
+            int sdpMLineIndex = (int) Double.parseDouble(String.valueOf(data.get("label")));
+            String candidate = (String) data.get("candidate");
+//            IceCandidate对象
+            IceCandidate iceCandidate = new IceCandidate(sdpMid, sdpMLineIndex, candidate);
+            peerConnectionManager.onRemoteIceCandidate(socketId, iceCandidate);
+        }
     }
 
     private void handleJoinRoom(Map map) {
-        Map data = (Map)map.get("data");
+        Map data = (Map) map.get("data");
         JSONArray array;
         if (data != null) {
             array = (JSONArray) data.get("connections");
             String js = JSONObject.toJSONString(array, SerializerFeature.WriteClassName);
-            ArrayList<String> connections = (ArrayList<String>) JSONObject.parseArray(js,String.class);
+            ArrayList<String> connections = (ArrayList<String>) JSONObject.parseArray(js, String.class);
             String mineId = (String) data.get("you");
-            peerConnectionManager.joinToRoom(this,true,connections,mineId);
+            peerConnectionManager.joinToRoom(this, true, connections, mineId);
         }
     }
 //
@@ -131,6 +169,42 @@ public class JavaWebSocket {
         JSONObject jsonObject = new JSONObject(map);
         String jsonString = jsonObject.toJSONString();
         socketClient.send(jsonString);
+    }
+
+    public void sendOffer(String socketId, SessionDescription sdp) {
+        HashMap<String, Object> childMap = new HashMap<>();
+        childMap.put("type", "offer");
+        childMap.put("sdp", sdp);
+
+        HashMap<String, Object> childMap1 = new HashMap<>();
+        childMap1.put("socketId", socketId);
+        childMap1.put("sdp", childMap);
+
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("eventName", "offer");
+        map.put("data", childMap1);
+
+        JSONObject object = new JSONObject(map);
+        String jsonString = object.toJSONString();
+        Log.i(TAG, "sendOffer >" + jsonString);
+        socketClient.send(jsonString);
+    }
+
+    public void sendIceCandidate(String socketId, IceCandidate iceCandidate) {
+        HashMap<String, Object> childMap = new HashMap<>();
+        childMap.put("id", iceCandidate.sdpMid);
+        childMap.put("label", iceCandidate.sdpMLineIndex);
+        childMap.put("candidate", iceCandidate.sdp);
+        childMap.put("socketId", socketId);
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("eventName", "__ice_candidate");
+        map.put("data", childMap);
+        JSONObject object = new JSONObject(map);
+        String jsonString = object.toJSONString();
+        Log.i(TAG, "sendIceCandidate: " + jsonString);
+        socketClient.send(jsonString);
+
+
     }
 
     //忽略证书

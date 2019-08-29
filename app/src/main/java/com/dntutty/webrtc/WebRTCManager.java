@@ -15,6 +15,11 @@ public class WebRTCManager {
     }
     private WebRTCManager() {}
 
+    /**
+     * 连接socket服务器
+     * @param activity
+     * @param roomId
+     */
     public void connect(MainActivity activity,String roomId) {
         this.roomId = roomId;
         webSocket = new JavaWebSocket(activity);

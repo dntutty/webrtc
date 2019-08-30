@@ -40,7 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class PeerConnectionManager {
-    private static final String TAG = "PeerConnectionManager";
+    private static final String TAG = "Webrtc_peer";
     private List<PeerConnection> peerConnections;
     private boolean videoEnable;
     private ExecutorService executor;
@@ -80,6 +80,21 @@ public class PeerConnectionManager {
 //    角色
     private Role role;
 
+    public void onConnection(String socketId) {
+        connectionIds.add(socketId);
+        createPeerConnections();
+        addStreams();
+    }
+
+    public void onReceiveOffer(String socketId, String sdp) {
+        Peer peer = connectionPeers.get(socketId);
+        if (null != peer) {
+            SessionDescription sessionDescription = new SessionDescription(SessionDescription.Type.OFFER, sdp);
+            peer.peerConnection.setRemoteDescription(peer,sessionDescription);
+            peer.peerConnection.createAnswer(peer,offerOrAnswerConstraint());
+        }
+    }
+
 
     enum Role {Caller, Receiver}
 
@@ -100,8 +115,8 @@ public class PeerConnectionManager {
     public void initContext(ChatRoomActivity context, EglBase eglBase) {
         this.eglBase = eglBase;
         this.context = context;
-        PeerConnection.IceServer iceServer = PeerConnection.IceServer.builder("stun:47.98.186.185:3478?transport-udp").setUsername("").setPassword("").createIceServer();
-        PeerConnection.IceServer iceServer1 = PeerConnection.IceServer.builder("turn:47.98.186.185:3478?transport-udp").setUsername("lsx").setPassword("123456").createIceServer();
+        PeerConnection.IceServer iceServer = PeerConnection.IceServer.builder("stun:47.98.186.185:3478?transport=udp").setUsername("").setPassword("").createIceServer();
+        PeerConnection.IceServer iceServer1 = PeerConnection.IceServer.builder("turn:47.98.186.185:3478?transport=udp").setUsername("lsx").setPassword("123456").createIceServer();
         iceServers.add(iceServer);
         iceServers.add(iceServer1);
 
@@ -302,12 +317,12 @@ public class PeerConnectionManager {
 
     /**
      * @param socketId
-     * @param sdp
+     * @param description
      */
-    public void onReceiveAnswer(String socketId, String sdp) {
+    public void onReceiveAnswer(String socketId, String description) {
 //        对方的回话 sdp
         Peer peer = connectionPeers.get(socketId);
-        SessionDescription sessionDescription = new SessionDescription(SessionDescription.Type.ANSWER, sdp);
+        SessionDescription sessionDescription = new SessionDescription(SessionDescription.Type.ANSWER, description);
         if (peer != null) {
             peer.peerConnection.setRemoteDescription(peer, sessionDescription);
         }
@@ -406,6 +421,10 @@ public class PeerConnectionManager {
 //                websocket
                 webSocket.sendOffer(socketId, peerConnection.getLocalDescription());
 
+            }
+
+            if(peerConnection.signalingState() == PeerConnection.SignalingState.HAVE_REMOTE_OFFER) {
+                webSocket.sendAnswer(socketId,peerConnection.getLocalDescription());
             }
         }
 

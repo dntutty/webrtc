@@ -35,7 +35,7 @@ import javax.net.ssl.X509TrustManager;
 
 public class JavaWebSocket {
     private PeerConnectionManager peerConnectionManager;
-    private static final String TAG = "JavaWebSocket";
+    private static final String TAG = "Webrtc_socket";
     private WebSocketClient socketClient;
     private MainActivity activity;
 
@@ -100,6 +100,14 @@ public class JavaWebSocket {
             handleJoinRoom(map);
         }
 
+        if(eventName.equals("_new_peer")) {
+            handlerNewPeer(map);
+        }
+
+        if(eventName.equals("_offer")) {
+            handleOffer(map);
+        }
+
 //        offer 对方响应  _ice_candidate   对方的n个小目标 ----->大目标
         if (eventName.equals("_ice_candidate")) {
             handleRemoteCandidate(map);
@@ -110,14 +118,35 @@ public class JavaWebSocket {
         }
     }
 
+    private void handlerNewPeer(Map map) {
+        Map data = (Map) map.get("data");
+        if (null != data) {
+            String socketId = (String) data.get("socketId");
+            peerConnectionManager.onConnection(socketId);
+        }
+    }
+
+    private void handleOffer(Map map) {
+        Map data = (Map) map.get("data");
+        Map sdpDic;
+        if (null != data) {
+            sdpDic = (Map) data.get("sdp");
+            String socketId = (String) data.get("socketId");
+            Map sdp = (Map) sdpDic.get("sdp");
+            String desription = (String) sdp.get("description");
+            peerConnectionManager.onReceiveOffer(socketId,desription);
+        }
+    }
+
     private void handleAnswer(Map map) {
         Map data = (Map) map.get("data");
         Map sdpDic;
         if (null != data) {
             sdpDic = (Map) data.get("sdp");
             String socketId = (String) data.get("socketId");
-            String sdp = (String) sdpDic.get("sdp");
-            peerConnectionManager.onReceiveAnswer(socketId,sdp);
+            Map sdp = (Map) sdpDic.get("sdp");
+            String desription = (String) sdp.get("description");
+            peerConnectionManager.onReceiveAnswer(socketId,desription);
         }
     }
 
@@ -181,7 +210,7 @@ public class JavaWebSocket {
         childMap1.put("sdp", childMap);
 
         HashMap<String, Object> map = new HashMap<>();
-        map.put("eventName", "offer");
+        map.put("eventName", "__offer");
         map.put("data", childMap1);
 
         JSONObject object = new JSONObject(map);
@@ -205,6 +234,25 @@ public class JavaWebSocket {
         socketClient.send(jsonString);
 
 
+    }
+
+    public void sendAnswer(String socketId, SessionDescription sdp) {
+        HashMap<String, Object> childMap = new HashMap<>();
+        childMap.put("type", "answer");
+        childMap.put("sdp", sdp);
+
+        HashMap<String, Object> childMap1 = new HashMap<>();
+        childMap1.put("socketId", socketId);
+        childMap1.put("sdp", childMap);
+
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("eventName", "__answer");
+        map.put("data", childMap1);
+
+        JSONObject object = new JSONObject(map);
+        String jsonString = object.toJSONString();
+        Log.i(TAG, "sendAnswer >" + jsonString);
+        socketClient.send(jsonString);
     }
 
     //忽略证书

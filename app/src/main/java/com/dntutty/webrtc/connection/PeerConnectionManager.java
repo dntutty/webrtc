@@ -80,20 +80,7 @@ public class PeerConnectionManager {
 //    角色
     private Role role;
 
-    public void onConnection(String socketId) {
-        connectionIds.add(socketId);
-        createPeerConnections();
-        addStreams();
-    }
 
-    public void onReceiveOffer(String socketId, String sdp) {
-        Peer peer = connectionPeers.get(socketId);
-        if (null != peer) {
-            SessionDescription sessionDescription = new SessionDescription(SessionDescription.Type.OFFER, sdp);
-            peer.peerConnection.setRemoteDescription(peer,sessionDescription);
-            peer.peerConnection.createAnswer(peer,offerOrAnswerConstraint());
-        }
-    }
 
 
     enum Role {Caller, Receiver}
@@ -311,6 +298,25 @@ public class PeerConnectionManager {
         Peer peer = connectionPeers.get(socketId);
         if (peer != null) {
             peer.peerConnection.addIceCandidate(iceCandidate);
+        }
+    }
+
+    public void onConnection(String socketId) {
+        connectionIds.add(socketId);
+        Peer peer = new Peer(socketId);
+        connectionPeers.put(socketId, peer);
+        if (localStream == null) {
+            createLocalStream();
+        }
+        peer.peerConnection.addStream(localStream);
+    }
+
+    public void onReceiveOffer(String socketId, String sdp) {
+        Peer peer = connectionPeers.get(socketId);
+        if (null != peer) {
+            SessionDescription sessionDescription = new SessionDescription(SessionDescription.Type.OFFER, sdp);
+            peer.peerConnection.setRemoteDescription(peer,sessionDescription);
+            peer.peerConnection.createAnswer(peer,offerOrAnswerConstraint());
         }
     }
 

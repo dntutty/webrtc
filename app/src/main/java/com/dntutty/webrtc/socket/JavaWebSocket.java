@@ -1,7 +1,8 @@
 package com.dntutty.webrtc.socket;
 
-import android.content.Context;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -10,24 +11,17 @@ import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.dntutty.webrtc.ChatRoomActivity;
 import com.dntutty.webrtc.MainActivity;
 import com.dntutty.webrtc.connection.PeerConnectionManager;
-
-import org.java_websocket.WebSocket;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
-import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
-
 import java.net.URI;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -150,7 +144,7 @@ public class JavaWebSocket {
         }
     }
 
-    private void handleRemoteCandidate(Map map) {
+    private void handleRemoteCandidate(@NonNull Map map) {
         Map data = (Map) map.get("data");
         String socketId;
         if (data != null) {
@@ -165,7 +159,7 @@ public class JavaWebSocket {
         }
     }
 
-    private void handleJoinRoom(Map map) {
+    private void handleJoinRoom(@NonNull Map map) {
         Map data = (Map) map.get("data");
         JSONArray array;
         if (data != null) {

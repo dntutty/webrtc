@@ -316,7 +316,6 @@ public class PeerConnectionManager {
         if (null != peer) {
             SessionDescription sessionDescription = new SessionDescription(SessionDescription.Type.OFFER, sdp);
             peer.peerConnection.setRemoteDescription(peer,sessionDescription);
-            peer.peerConnection.createAnswer(peer,offerOrAnswerConstraint());
         }
     }
 
@@ -430,6 +429,10 @@ public class PeerConnectionManager {
             }
 
             if(peerConnection.signalingState() == PeerConnection.SignalingState.HAVE_REMOTE_OFFER) {
+                peerConnection.createAnswer(this,offerOrAnswerConstraint());
+            }
+
+            if(peerConnection.signalingState() == PeerConnection.SignalingState.STABLE) {
                 webSocket.sendAnswer(socketId,peerConnection.getLocalDescription());
             }
         }
